@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="sr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GoalStat Pro — Statistički Kalkulator Golova</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            pitch: {
+              950: '#060a11',
+              900: '#0c121e',
+              800: '#131c2e',
+              700: '#1c2840',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #060a11;
+      color: #f1f5f9;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0c121e;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1c2840;
+      border-radius: 9999px;
+    }
+    .glass-card {
+      background: linear-gradient(145deg, rgba(19, 28, 46, 0.94), rgba(12, 18, 30, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+    }
+    .my-pick-box {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(16, 185, 129, 0.12));
+      border: 1px solid rgba(245, 158, 11, 0.42);
+    }
+    .ticket-card {
+      background: linear-gradient(160deg, rgba(16, 185, 129, 0.09), rgba(12, 18, 30, 0.98));
+      border: 1px solid rgba(16, 185, 129, 0.32);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Zaglavlje -->
+  <header class="sticky top-0 z-30 bg-pitch-950/90 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+          <svg class="w-5 h-5 text-pitch-950" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 7l3 2.2-1.1 3.5h-3.8L9 9.2 12 7z"></path>
+          </svg>
+        </div>
+        <div class="truncate">
+          <h1 class="text-base font-extrabold tracking-tight text-white leading-tight">GoalStat <span class="text-emerald-400">Pro</span></h1>
+          <p class="text-[11px] text-slate-400 font-medium leading-tight">Poisson Statistički Model</p>
+        </div>
+      </div>
+
+      <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
+        Sezona 2026/27
+      </span>
+    </div>
+  </header>
+
+  <!-- Glavni sadržaj -->
+  <main class="flex-1 max-w-2xl w-full mx-auto px-4 py-4 space-y-4">
+
+    <!-- Obaveštenja -->
+    <div id="toastBox" class="hidden rounded-xl px-4 py-3 text-xs font-semibold border flex items-center justify-between gap-2">
+      <span id="toastText"></span>
+      <button type="button" id="closeToastBtn" class="px-1.5 py-0.5 rounded opacity-75 hover:opacity-100">✕</button>
+    </div>
+
+    <!-- Izbor lige i kontrole kola -->
+    <section class="glass-card rounded-2xl p-4 space-y-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <label for="leagueSelect" class="text-xs font-bold uppercase tracking-wider text-slate-400">
+          Izaberite ligu ili takmičenje
+        </label>
+        <div class="flex items-center gap-1.5">
+          <span id="cachedBadge" class="hidden text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            Keš 12h
+          </span>
+          <span id="leagueAvgBadge" class="hidden text-[11px] font-semibold text-sky-300 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
+            Prosek: 0.00
+          </span>
+        </div>
+      </div>
+
+      <!-- Pretraga lige ili države -->
+      <div class="relative">
+        <input id="leagueSearchInput" type="text" placeholder="Pretraži ligu ili državu (npr. Engleska, Srbija, Liga šampiona, Peru)..."
+          class="w-full bg-pitch-950/90 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition" />
+        <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="M21 21l-4.35-4.35"></path>
+        </svg>
+      </div>
+
+      <!-- Padajući meni grupisan po kategorijama -->
+      <div>
+        <select id="leagueSelect"
+          class="w-full bg-pitch-950 border border-white/15 rounded-xl px-3.5 py-3 text-sm font-semibold text-white focus:outline-none focus:border-emerald-400 transition">
+        </select>
+      </div>
+
+      <!-- Brzi dugmići -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5" id="quickLeaguesBar">
+        <button type="button" data-league="uefa.champions" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Liga šampiona</button>
+        <button type="button" data-league="uefa.europa" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Liga Evrope</button>
+        <button type="button" data-league="uefa.europa.conf" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Liga konferencija</button>
+        <button type="button" data-league="eng.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Premijer liga</button>
+        <button type="button" data-league="esp.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">La Liga</button>
+        <button type="button" data-league="ger.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Bundesliga</button>
+        <button type="button" data-league="ita.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Serie A</button>
+        <button type="button" data-league="fra.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Ligue 1</button>
+        <button type="button" data-league="srb.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">SuperLiga</button>
+      </div>
+
+      <!-- Informacije o kolu i dugmad -->
+      <div class="pt-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span id="roundBadge" class="text-xs font-bold text-white bg-pitch-800 px-2.5 py-1.5 rounded-lg border border-white/10">
+            Učitavanje...
+          </span>
+          <span id="countBadge" class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20">
+            0 utakmica
+          </span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button id="refreshBtn" type="button"
+            class="px-3 py-1.5 rounded-lg bg-pitch-800 hover:bg-pitch-700 text-slate-200 border border-white/10 transition flex items-center gap-1.5 text-xs font-semibold">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span>Osveži podatke</span>
+          </button>
+
+          <button id="toggleManualBtn" type="button"
+            class="px-3 py-1.5 rounded-lg bg-pitch-800 hover:bg-pitch-700 text-slate-200 border border-white/10 transition flex items-center gap-1.5 text-xs font-semibold">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            <span>Ručni unos / CSV</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel za ručni unos / CSV -->
+    <section id="manualDrawer" class="hidden glass-card rounded-2xl p-4 space-y-3 border-amber-500/30">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h2 class="text-sm font-extrabold text-white flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            Ručni unos / CSV
+          </h2>
+          <p id="manualSubtitle" class="text-[11px] text-slate-400 mt-0.5">
+            Unesite parove (Domaćin - Gost) ili CSV linije (Domaćin, Gost, Dati_D, Primljeni_D, Dati_G, Primljeni_G, xG_D, xG_G).
+          </p>
+        </div>
+        <button id="closeManualBtn" type="button" class="px-2.5 py-1 rounded-lg bg-pitch-800 text-slate-400 hover:text-white text-xs font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between gap-2">
+          <label for="manualTextarea" class="text-xs font-semibold text-slate-300">Parovi i statistika:</label>
+          <button id="presetBtn" type="button" class="text-[11px] font-bold text-emerald-400 hover:underline">
+            Učitaj primer kola
+          </button>
+        </div>
+        <textarea id="manualTextarea" rows="6"
+          placeholder="Crvena zvezda - Partizan&#10;TSC - Vojvodina&#10;ili CSV:&#10;Crvena zvezda, Partizan, 2.60, 0.50, 1.85, 1.15, 2.45, 1.60"
+          class="w-full bg-pitch-950 border border-white/15 rounded-xl p-3 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 leading-relaxed"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="manualAvgHome" class="block text-[11px] text-slate-400 mb-1">Prosek golova domaćina (liga)</label>
+          <input id="manualAvgHome" type="number" step="0.05" value="1.52"
+            class="w-full bg-pitch-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+        </div>
+        <div>
+          <label for="manualAvgAway" class="block text-[11px] text-slate-400 mb-1">Prosek golova gosta (liga)</label>
+          <input id="manualAvgAway" type="number" step="0.05" value="1.18"
+            class="w-full bg-pitch-950 border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-400" />
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button id="runManualCalcBtn" type="button"
+          class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-pitch-950 text-xs font-extrabold transition">
+          Izračunaj kolo
+        </button>
+      </div>
+    </section>
+
+    <!-- Stanje učitavanja -->
+    <div id="loadingBox" class="hidden py-12 flex flex-col items-center justify-center text-center space-y-3">
+      <div class="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin"></div>
+      <p id="loadingTitle" class="text-sm font-semibold text-slate-200">Učitavanje tekućeg kola...</p>
+      <p id="loadingDetail" class="text-xs text-slate-400">Prikupljanje rasporeda i klupskih utakmica...</p>
+    </div>
+
+    <!-- Sve utakmice kola -->
+    <section id="matchesList" class="space-y-3"></section>
+
+    <!-- Tiket kola na dnu izabrane lige -->
+    <section id="roundTicketSection" class="hidden ticket-card rounded-2xl p-4 space-y-3 mb-6">
+      <div class="flex items-center justify-between gap-2 border-b border-emerald-500/20 pb-2.5">
+        <h2 id="ticketHeading" class="text-sm font-extrabold uppercase tracking-wider text-emerald-300">
+          Tiket kola
+        </h2>
+        <button id="copyTicketBtn" type="button"
+          class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-pitch-950 text-xs font-extrabold transition shrink-0">
+          Kopiraj tiket
+        </button>
+      </div>
+      <div id="roundTicketItems" class="divide-y divide-white/10"></div>
+    </section>
+
+  </main>
+
+  <script>
+    /**
+     * Sva tražena takmičenja grupisana u 3 kategorije
+     */
+    const LEAGUES = [
+      // UEFA klupska takmičenja
+      { id: "uefa.champions", category: "UEFA takmičenja", name: "Liga šampiona", country: "Evropa" },
+      { id: "uefa.europa", category: "UEFA takmičenja", name: "Liga Evrope", country: "Evropa" },
+      { id: "uefa.europa.conf", category: "UEFA takmičenja", name: "Liga konferencija", country: "Evropa" },
+
+      // Lige petice (1. i 2. rang)
+      { id: "eng.1", category: "Lige petice", name: "Engleska Premijer liga", country: "Engleska" },
+      { id: "eng.2", category: "Lige petice", name: "Engleska Championship", country: "Engleska" },
+      { id: "esp.1", category: "Lige petice", name: "Španija La Liga", country: "Španija" },
+      { id: "esp.2", category: "Lige petice", name: "Španija La Liga 2", country: "Španija" },
+      { id: "ger.1", category: "Lige petice", name: "Nemačka Bundesliga", country: "Nemačka" },
+      { id: "ger.2", category: "Lige petice", name: "Nemačka 2. Bundesliga", country: "Nemačka" },
+      { id: "ita.1", category: "Lige petice", name: "Italija Serie A", country: "Italija" },
+      { id: "ita.2", category: "Lige petice", name: "Italija Serie B", country: "Italija" },
+      { id: "fra.1", category: "Lige petice", name: "Francuska Ligue 1", country: "Francuska" },
+      { id: "fra.2", category: "Lige petice", name: "Francuska Ligue 2", country: "Francuska" },
+
+      // 17 elitnih nacionalnih liga
+      { id: "aut.1", category: "Nacionalne lige", name: "Austrija Bundesliga", country: "Austrija" },
+      { id: "bel.1", category: "Nacionalne lige", name: "Belgija Pro Liga", country: "Belgija" },
+      { id: "cze.1", category: "Nacionalne lige", name: "Češka 1. Liga", country: "Češka" },
+      { id: "den.1", category: "Nacionalne lige", name: "Danska Superliga", country: "Danska" },
+      { id: "gre.1", category: "Nacionalne lige", name: "Grčka Super League", country: "Grčka" },
+      { id: "hun.1", category: "Nacionalne lige", name: "Mađarska NB I", country: "Mađarska" },
+      { id: "ned.1", category: "Nacionalne lige", name: "Holandija Eredivisie", country: "Holandija" },
+      { id: "nor.1", category: "Nacionalne lige", name: "Norveška Eliteserien", country: "Norveška" },
+      { id: "pol.1", category: "Nacionalne lige", name: "Poljska Ekstraklasa", country: "Poljska" },
+      { id: "por.1", category: "Nacionalne lige", name: "Portugalija Primeira Liga", country: "Portugalija" },
+      { id: "rus.1", category: "Nacionalne lige", name: "Rusija Premier Liga", country: "Rusija" },
+      { id: "srb.1", category: "Nacionalne lige", name: "Srbija SuperLiga", country: "Srbija" },
+      { id: "sco.1", category: "Nacionalne lige", name: "Škotska Premiership", country: "Škotska" },
+      { id: "swe.1", category: "Nacionalne lige", name: "Švedska Allsvenskan", country: "Švedska" },
+      { id: "sui.1", category: "Nacionalne lige", name: "Švajcarska Super League", country: "Švajcarska" },
+      { id: "tur.1", category: "Nacionalne lige", name: "Turska Süper Lig", country: "Turska" },
+      { id: "per.1", category: "Nacionalne lige", name: "Peru Liga 1", country: "Peru" }
+    ];
+
+    const SAMPLE_TEMPLATES = {
+      "srb.1":
+        "Crvena zvezda, Partizan, 2.65, 0.45, 1.85, 1.15, 2.50, 1.60\n" +
+        "TSC Bačka Topola, Vojvodina, 1.65, 1.10, 1.40, 1.25, 1.55, 1.30\n" +
+        "Čukarički, Radnički 1923, 1.50, 1.05, 1.35, 1.35, 1.45, 1.25",
+      "cze.1":
+        "Slavia Praha, Viktoria Plzeň, 2.35, 0.55, 1.65, 1.05, 2.20, 1.50\n" +
+        "Sparta Praha, Baník Ostrava, 2.20, 0.80, 1.35, 1.25, 2.05, 1.20"
+    };
+
+    /**
+     * Keširanje (12 sati) i stanje aplikacije
+     */
+    const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+    const STORAGE_SELECTED_KEY = 'goalstat_pro_selected_league_v6';
+    const STORAGE_CACHE_PREFIX = 'goalstat_pro_cache_v6_';
+
+    const savedLeague = localStorage.getItem(STORAGE_SELECTED_KEY);
+    const initialLeagueId = LEAGUES.some(l => l.id === savedLeague) ? savedLeague : LEAGUES[0].id;
+
+    const state = {
+      selectedLeagueId: initialLeagueId,
+      predictions: [],
+      ticketPlainText: ''
+    };
+
+    function getLeagueInfo(id) {
+      return LEAGUES.find(l => l.id === id) || LEAGUES[0];
+    }
+
+    function readCache(slug) {
+      try {
+        const raw = localStorage.getItem(`${STORAGE_CACHE_PREFIX}${slug}`);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed.timestamp || (Date.now() - parsed.timestamp) > CACHE_TTL_MS) {
+          localStorage.removeItem(`${STORAGE_CACHE_PREFIX}${slug}`);
+          return null;
+        }
+        return parsed.data;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function writeCache(slug, data) {
+      try {
+        localStorage.setItem(`${STORAGE_CACHE_PREFIX}${slug}`, JSON.stringify({
+          timestamp: Date.now(),
+          data
+        }));
+      } catch (err) {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(STORAGE_CACHE_PREFIX)) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    }
+
+    /**
+     * Formatiranje datuma i povlačenje celog tekućeg kola (petak-ponedeljak / prozor kola)
+     */
+    function toYmd(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}${m}${d}`;
+    }
+
+    function parseEventsToFixtures(events) {
+      const items = [];
+      (events || []).forEach(ev => {
+        const comp = ev.competitions && ev.competitions[0];
+        if (!comp || !Array.isArray(comp.competitors) || comp.competitors.length < 2) return;
+
+        const homeComp = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
+        const awayComp = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
+
+        const homeId = String(homeComp.team?.id || homeComp.id || '');
+        const awayId = String(awayComp.team?.id || awayComp.id || '');
+        const homeName = homeComp.team?.displayName || homeComp.team?.name || 'Domaćin';
+        const awayName = awayComp.team?.displayName || awayComp.team?.name || 'Gost';
+        const completed = Boolean(ev.status?.type?.completed || comp.status?.type?.completed);
+        const ts = new Date(ev.date).getTime();
+
+        if (!homeId || !awayId || Number.isNaN(ts)) return;
+
+        items.push({
+          id: String(ev.id),
+          date: ev.date,
+          timestamp: ts,
+          completed,
+          roundName: ev.week?.text || '',
+          home: { id: homeId, name: homeName },
+          away: { id: awayId, name: awayName }
+        });
+      });
+      return items;
+    }
+
+    function parseScoreNum(val) {
+      if (val === null || val === undefined || val === '') return null;
+      if (typeof val === 'object') {
+        const raw = val.value ?? val.displayValue;
+        if (raw === null || raw === undefined || raw === '') return null;
+        const n = Number(raw);
+        return Number.isNaN(n) ? null : n;
+      }
+      const n = Number(val);
+      return Number.isNaN(n) ? null : n;
+    }
+
+    function parseXgNum(competitor) {
+      if (!competitor || !Array.isArray(competitor.statistics)) return null;
+      const stat = competitor.statistics.find(s => {
+        const key = `${s.name || ''} ${s.abbreviation || ''} ${s.label || ''}`.toLowerCase();
+        return key.includes('xg') || key.includes('expected goals');
+      });
+      if (!stat) return null;
+      const val = Number(stat.displayValue ?? stat.value);
+      return Number.isNaN(val) ? null : val;
+    }
+
+    async function fetchClubSchedule2026(slug, teamId) {
+      const urls = [
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/teams/${teamId}/schedule?season=2026`,
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/teams/${teamId}/schedule`
+      ];
+
+      let data = null;
+      for (const url of urls) {
+        try {
+          const resp = await fetch(url);
+          if (resp.ok) {
+            const json = await resp.json();
+            if (Array.isArray(json.events) && json.events.length > 0) {
+              data = json;
+              break;
+            }
+          }
+        } catch (err) {
+          // Nastavi na sledeći pokušaj
+        }
+      }
+
+      if (!data || !Array.isArray(data.events)) return [];
+
+      const completed = [];
+      data.events.forEach(ev => {
+        const comp = ev.competitions && ev.competitions[0];
+        if (!comp || !Array.isArray(comp.competitors) || comp.competitors.length < 2) return;
+
+        const isDone = Boolean(
+          ev.status?.type?.completed ||
+          comp.status?.type?.completed ||
+          ev.status?.type?.state === 'post' ||
+          comp.status?.type?.state === 'post'
+        );
+        if (!isDone) return;
+
+        const homeComp = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
+        const awayComp = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
+
+        const hScore = parseScoreNum(homeComp.score);
+        const aScore = parseScoreNum(awayComp.score);
+        if (hScore === null || aScore === null) return;
+
+        const hId = String(homeComp.team?.id || homeComp.id || '');
+        const aId = String(awayComp.team?.id || awayComp.id || '');
+        const isHome = hId === String(teamId);
+        const isAway = aId === String(teamId);
+        if (!isHome && !isAway) return;
+
+        const hXg = parseXgNum(homeComp);
+        const aXg = parseXgNum(awayComp);
+
+        completed.push({
+          eventId: String(ev.id),
+          timestamp: new Date(ev.date).getTime(),
+          isHome,
+          opponentId: isHome ? aId : hId,
+          goalsFor: isHome ? hScore : aScore,
+          goalsAgainst: isHome ? aScore : hScore,
+          xgFor: isHome ? hXg : aXg,
+          xgAgainst: isHome ? aXg : hXg
+        });
+      });
+
+      completed.sort((a, b) => a.timestamp - b.timestamp);
+      return completed;
+    }
+
+    /**
+     * Povlači celo kolo kroz višednevni prozor (-3 dana do +6 dana), deduplikuje po ID-ju i sortira hronološki
+     */
+    async function loadLeagueRound(slug, forceRefresh = false) {
+      if (!forceRefresh) {
+        const cached = readCache(slug);
+        if (cached) {
+          return { ...cached, fromCache: true };
+        }
+      }
+
+      const now = new Date();
+      const startDate = new Date(now.getTime() - 3 * 86400000);
+      const endDate = new Date(now.getTime() + 6 * 86400000);
+      const windowParam = `${toYmd(startDate)}-${toYmd(endDate)}`;
+
+      const [resDefault, resWindow] = await Promise.all([
+        fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard`).catch(() => null),
+        fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${windowParam}`).catch(() => null)
+      ]);
+
+      const jsonDefault = resDefault && resDefault.ok ? await resDefault.json() : null;
+      const jsonWindow = resWindow && resWindow.ok ? await resWindow.json() : null;
+
+      if (!jsonDefault && !jsonWindow) {
+        return { unsupported: true };
+      }
+
+      const combinedRaw = [
+        ...parseEventsToFixtures(jsonDefault?.events || []),
+        ...parseEventsToFixtures(jsonWindow?.events || [])
+      ];
+
+      // Deduplikacija po ID-ju
+      const uniqueMap = new Map();
+      combinedRaw.forEach(item => {
+        if (!uniqueMap.has(item.id)) {
+          uniqueMap.set(item.id, item);
+        }
+      });
+
+      let allFixtures = Array.from(uniqueMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+      // Preferiraj neigrane / predstojeće i tekuće utakmice kola u okviru prozora
+      const windowStartTs = startDate.getTime();
+      const windowEndTs = endDate.getTime();
+      const inWindow = allFixtures.filter(f => f.timestamp >= windowStartTs && f.timestamp <= windowEndTs);
+
+      let roundFixtures = inWindow.length > 0 ? inWindow : allFixtures;
+
+      // Ako ima više od 14 mečeva u zbiru (npr. više kola zaredom), izdvoj jedno kompletno kolo
+      if (roundFixtures.length > 14) {
+        const upcomingAnchor = roundFixtures.find(f => !f.completed) || roundFixtures[0];
+        const anchorTs = upcomingAnchor.timestamp;
+        const clustered = roundFixtures.filter(f => Math.abs(f.timestamp - anchorTs) <= 4.5 * 86400000);
+        if (clustered.length >= 4) {
+          roundFixtures = clustered;
+        }
+      }
+
+      roundFixtures.sort((a, b) => a.timestamp - b.timestamp);
+
+      if (roundFixtures.length === 0) {
+        return { unsupported: true };
+      }
+
+      const clubIdsSet = new Set();
+      roundFixtures.forEach(f => {
+        clubIdsSet.add(f.home.id);
+        clubIdsSet.add(f.away.id);
+      });
+
+      const clubIds = Array.from(clubIdsSet);
+      document.getElementById('loadingDetail').textContent =
+        `Preuzimanje klupske statistike za ${clubIds.length} klubova...`;
+
+      const schedulesArr = await Promise.all(
+        clubIds.map(id => fetchClubSchedule2026(slug, id))
+      );
+
+      const schedulesMap = {};
+      clubIds.forEach((id, idx) => {
+        schedulesMap[id] = schedulesArr[idx] || [];
+      });
+
+      const roundLabel =
+        roundFixtures.find(f => f.roundName)?.roundName ||
+        jsonDefault?.leagues?.[0]?.season?.type?.name ||
+        'Tekuće kolo';
+
+      const payload = {
+        roundFixtures,
+        schedulesMap,
+        roundLabel
+      };
+
+      writeCache(slug, payload);
+      return { ...payload, fromCache: false };
+    }
+
+    /**
+     * Poissonov statistički model (bez uticaja kladioničarskih kvota)
+     */
+    function poissonProbs(lambda, maxGoals = 10) {
+      const lam = Math.max(0.15, Math.min(5.5, lambda));
+      const arr = new Array(maxGoals + 1).fill(0);
+      arr[0] = Math.exp(-lam);
+      for (let k = 1; k <= maxGoals; k++) {
+        arr[k] = (arr[k - 1] * lam) / k;
+      }
+      const total = arr.reduce((acc, v) => acc + v, 0);
+      return arr.map(v => v / total);
+    }
+
+    function evaluateMatchMarkets(lambdaHome, lambdaAway) {
+      const maxG = 10;
+      const pH = poissonProbs(lambdaHome, maxG);
+      const pA = poissonProbs(lambdaAway, maxG);
+
+      let pTot0 = 0, pTot1 = 0, pTot2 = 0, pTot3 = 0, pTot4 = 0;
+      let pGG = 0;
+      let pHomeWin = 0, pDraw = 0, pAwayWin = 0;
+
+      for (let h = 0; h <= maxG; h++) {
+        for (let a = 0; a <= maxG; a++) {
+          const prob = pH[h] * pA[a];
+          const sumGoals = h + a;
+
+          if (sumGoals === 0) pTot0 += prob;
+          if (sumGoals === 1) pTot1 += prob;
+          if (sumGoals === 2) pTot2 += prob;
+          if (sumGoals === 3) pTot3 += prob;
+          if (sumGoals === 4) pTot4 += prob;
+
+          if (h > 0 && a > 0) pGG += prob;
+
+          if (h > a) pHomeWin += prob;
+          else if (h === a) pDraw += prob;
+          else pAwayWin += prob;
+        }
+      }
+
+      const over15 = 1 - (pTot0 + pTot1);
+      const over25 = 1 - (pTot0 + pTot1 + pTot2);
+      const over35 = 1 - (pTot0 + pTot1 + pTot2 + pTot3);
+      const over45 = 1 - (pTot0 + pTot1 + pTot2 + pTot3 + pTot4);
+      const under25 = pTot0 + pTot1 + pTot2;
+      const under35 = pTot0 + pTot1 + pTot2 + pTot3;
+
+      const home05Plus = 1 - pH[0];
+      const home15Plus = 1 - (pH[0] + pH[1]);
+      const away05Plus = 1 - pA[0];
+      const away15Plus = 1 - (pA[0] + pA[1]);
+
+      const ggYes = pGG;
+      const ggNo = 1 - pGG;
+
+      // Top 3 gol/GG tržišta (bez trivijalnog 0.5+ ukupno da bi GG/NG i golovi prirodno dolazili do izražaja)
+      const topMarketPool = [
+        { label: "GG (Oba tima daju gol)", prob: ggYes },
+        { label: "NG (Oba tima ne daju gol)", prob: ggNo },
+        { label: "Ukupno golova 1.5+", prob: over15 },
+        { label: "Ukupno golova 2.5+", prob: over25 },
+        { label: "Ukupno golova 3.5+", prob: over35 },
+        { label: "Ukupno golova 4.5+", prob: over45 },
+        { label: "Manje od 2.5 golova", prob: under25 },
+        { label: "Domaćin golova 0.5+", prob: home05Plus },
+        { label: "Domaćin golova 1.5+", prob: home15Plus },
+        { label: "Gost golova 0.5+", prob: away05Plus },
+        { label: "Gost golova 1.5+", prob: away15Plus }
+      ];
+
+      const top3 = topMarketPool
+        .map(m => ({
+          label: m.label,
+          pct: Number(Math.min(96.5, Math.max(2.0, m.prob * 100)).toFixed(1))
+        }))
+        .sort((a, b) => b.pct - a.pct)
+        .slice(0, 3);
+
+      // Prošireni model za MOJ PREDLOG (1, X, 2, 1X, X2, 12, GG/NG, golovi na meču, golovi timova i 1. poluvreme ~44%)
+      const p1X = pHomeWin + pDraw;
+      const pX2 = pAwayWin + pDraw;
+      const p12 = pHomeWin + pAwayWin;
+
+      const lam1H_Home = 0.44 * lambdaHome;
+      const lam1H_Away = 0.44 * lambdaAway;
+      const lam1H_Total = lam1H_Home + lam1H_Away;
+
+      const p1H0 = Math.exp(-lam1H_Total);
+      const p1H1 = lam1H_Total * Math.exp(-lam1H_Total);
+      const over05_1H = 1 - p1H0;
+      const over15_1H = 1 - (p1H0 + p1H1);
+      const home05_1H = 1 - Math.exp(-lam1H_Home);
+      const away05_1H = 1 - Math.exp(-lam1H_Away);
+
+      const candidates = [
+        { label: "1", prob: pHomeWin, weight: 1.12 },
+        { label: "2", prob: pAwayWin, weight: 1.12 },
+        { label: "X", prob: pDraw, weight: 1.05 },
+        { label: "1X", prob: p1X, weight: 0.96 },
+        { label: "X2", prob: pX2, weight: 0.96 },
+        { label: "12", prob: p12, weight: 0.95 },
+        { label: "GG", prob: ggYes, weight: 1.10 },
+        { label: "NG", prob: ggNo, weight: 1.04 },
+        { label: "Ukupno 1.5+", prob: over15, weight: 1.02 },
+        { label: "Ukupno 2.5+", prob: over25, weight: 1.07 },
+        { label: "Ukupno 3.5+", prob: over35, weight: 1.06 },
+        { label: "Manje od 2.5", prob: under25, weight: 1.02 },
+        { label: "Manje od 3.5", prob: under35, weight: 0.99 },
+        { label: "Domaćin 1.5+", prob: home15Plus, weight: 1.06 },
+        { label: "Gost 1.5+", prob: away15Plus, weight: 1.06 },
+        { label: "1P 0.5+", prob: over05_1H, weight: 1.01 },
+        { label: "1P 1.5+", prob: over15_1H, weight: 1.06 },
+        { label: "Domaćin 1P 0.5+", prob: home05_1H, weight: 1.08 },
+        { label: "Gost 1P 0.5+", prob: away05_1H, weight: 1.08 }
+      ];
+
+      let filtered = candidates
+        .map(c => ({
+          label: c.label,
+          pct: Number((c.prob * 100).toFixed(1)),
+          weight: c.weight
+        }))
+        .filter(c => c.pct >= 55.0 && c.pct <= 86.0);
+
+      if (filtered.length === 0) {
+        filtered = candidates
+          .map(c => ({
+            label: c.label,
+            pct: Number((c.prob * 100).toFixed(1)),
+            weight: c.weight
+          }))
+          .filter(c => c.pct >= 45.0 && c.pct <= 92.0);
+      }
+
+      filtered.sort((a, b) => (b.pct * b.weight) - (a.pct * a.weight));
+
+      const best = filtered[0] || {
+        label: "1P 0.5+",
+        pct: Number((over05_1H * 100).toFixed(1))
+      };
+
+      return {
+        tips: top3,
+        myPick: {
+          label: best.label,
+          pct: best.pct
+        }
+      };
+    }
+
+    function summarizeSlice(sliceMatches) {
+      if (!sliceMatches || sliceMatches.length === 0) return null;
+      let gfSum = 0, gaSum = 0, xgForSum = 0, xgAgainstSum = 0, xgCount = 0;
+
+      sliceMatches.forEach(m => {
+        gfSum += m.goalsFor;
+        gaSum += m.goalsAgainst;
+        if (m.xgFor !== null && m.xgAgainst !== null) {
+          xgForSum += m.xgFor;
+          xgAgainstSum += m.xgAgainst;
+          xgCount++;
+        }
+      });
+
+      const n = sliceMatches.length;
+      const avgGf = gfSum / n;
+      const avgGa = gaSum / n;
+
+      if (xgCount > 0) {
+        return {
+          gf: avgGf * 0.75 + (xgForSum / xgCount) * 0.25,
+          ga: avgGa * 0.75 + (xgAgainstSum / xgCount) * 0.25,
+          rawGf: avgGf,
+          rawGa: avgGa
+        };
+      }
+
+      return {
+        gf: avgGf,
+        ga: avgGa,
+        rawGf: avgGf,
+        rawGa: avgGa
+      };
+    }
+
+    function buildRoundPredictions(roundFixtures, schedulesMap) {
+      const uniqueCompleted = new Map();
+      Object.values(schedulesMap).forEach(list => {
+        (list || []).forEach(match => {
+          if (!uniqueCompleted.has(match.eventId)) {
+            uniqueCompleted.set(match.eventId, match);
+          }
+        });
+      });
+
+      let sumHomeGoals = 0;
+      let sumAwayGoals = 0;
+      let countCompleted = 0;
+
+      uniqueCompleted.forEach(m => {
+        if (m.isHome) {
+          sumHomeGoals += m.goalsFor;
+          sumAwayGoals += m.goalsAgainst;
+        } else {
+          sumHomeGoals += m.goalsAgainst;
+          sumAwayGoals += m.goalsFor;
+        }
+        countCompleted++;
+      });
+
+      const leagueAvgHome = countCompleted > 0 ? sumHomeGoals / countCompleted : 1.50;
+      const leagueAvgAway = countCompleted > 0 ? sumAwayGoals / countCompleted : 1.18;
+      const leagueTotalAvg = leagueAvgHome + leagueAvgAway;
+
+      const predictions = roundFixtures.map(fix => {
+        const hMatches = schedulesMap[fix.home.id] || [];
+        const aMatches = schedulesMap[fix.away.id] || [];
+
+        const hHomeOnly = summarizeSlice(hMatches.filter(m => m.isHome));
+        const hLast5 = summarizeSlice(hMatches.slice(-5));
+        const hLast10 = summarizeSlice(hMatches.slice(-10));
+        const hAll = summarizeSlice(hMatches);
+
+        const aAwayOnly = summarizeSlice(aMatches.filter(m => !m.isHome));
+        const aLast5 = summarizeSlice(aMatches.slice(-5));
+        const aLast10 = summarizeSlice(aMatches.slice(-10));
+        const aAll = summarizeSlice(aMatches);
+
+        const hBaseGf = hHomeOnly ? hHomeOnly.gf : (hAll ? hAll.gf : leagueAvgHome);
+        const hBaseGa = hHomeOnly ? hHomeOnly.ga : (hAll ? hAll.ga : leagueAvgAway);
+        const h5Gf = hLast5 ? hLast5.gf : hBaseGf;
+        const h5Ga = hLast5 ? hLast5.ga : hBaseGa;
+        const h10Gf = hLast10 ? hLast10.gf : hBaseGf;
+        const h10Ga = hLast10 ? hLast10.ga : hBaseGa;
+
+        const wHomeGf = hBaseGf * 0.45 + h5Gf * 0.35 + h10Gf * 0.20;
+        const wHomeGa = hBaseGa * 0.45 + h5Ga * 0.35 + h10Ga * 0.20;
+
+        const aBaseGf = aAwayOnly ? aAwayOnly.gf : (aAll ? aAll.gf : leagueAvgAway);
+        const aBaseGa = aAwayOnly ? aAwayOnly.ga : (aAll ? aAll.ga : leagueAvgHome);
+        const a5Gf = aLast5 ? aLast5.gf : aBaseGf;
+        const a5Ga = aLast5 ? aLast5.ga : aBaseGa;
+        const a10Gf = aLast10 ? aLast10.gf : aBaseGf;
+        const a10Ga = aLast10 ? aLast10.ga : aBaseGa;
+
+        const wAwayGf = aBaseGf * 0.45 + a5Gf * 0.35 + a10Gf * 0.20;
+        const wAwayGa = aBaseGa * 0.45 + a5Ga * 0.35 + a10Ga * 0.20;
+
+        let lambdaHome =
+          (wHomeGf / Math.max(0.45, leagueAvgHome)) *
+          (wAwayGa / Math.max(0.45, leagueAvgHome)) *
+          leagueAvgHome;
+
+        let lambdaAway =
+          (wAwayGf / Math.max(0.45, leagueAvgAway)) *
+          (wHomeGa / Math.max(0.45, leagueAvgAway)) *
+          leagueAvgAway;
+
+        const h2h = hMatches.filter(m => m.opponentId === fix.away.id);
+        if (h2h.length > 0) {
+          let h2hH = 0, h2hA = 0;
+          h2h.forEach(m => {
+            h2hH += m.goalsFor;
+            h2hA += m.goalsAgainst;
+          });
+          lambdaHome = lambdaHome * 0.88 + (h2hH / h2h.length) * 0.12;
+          lambdaAway = lambdaAway * 0.88 + (h2hA / h2h.length) * 0.12;
+        }
+
+        const { tips, myPick } = evaluateMatchMarkets(lambdaHome, lambdaAway);
+
+        return {
+          id: fix.id,
+          date: fix.date,
+          homeTeam: fix.home.name,
+          awayTeam: fix.away.name,
+          rawSummary: `D: ${wHomeGf.toFixed(2)}/${wHomeGa.toFixed(2)} | G: ${wAwayGf.toFixed(2)}/${wAwayGa.toFixed(2)}`,
+          tips,
+          myPick
+        };
+      });
+
+      return {
+        predictions,
+        leagueTotalAvg: leagueTotalAvg.toFixed(2)
+      };
+    }
+
+    /**
+     * Obrada ručnog unosa / CSV-a
+     */
+    function parseManualLines(rawText, avgHome, avgAway) {
+      const lines = rawText
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => l.length > 0 && !l.startsWith('#'));
+
+      const out = [];
+      lines.forEach((line, idx) => {
+        const sep = line.includes(';') ? ';' : ',';
+        const parts = line.split(sep).map(p => p.trim());
+
+        if (parts.length >= 6) {
+          const homeTeam = parts[0];
+          const awayTeam = parts[1];
+          let hGf = parseFloat(parts[2]) || avgHome;
+          let hGa = parseFloat(parts[3]) || avgAway;
+          let aGf = parseFloat(parts[4]) || avgAway;
+          let aGa = parseFloat(parts[5]) || avgHome;
+
+          if (parts.length >= 8) {
+            const xgH = parseFloat(parts[6]);
+            const xgA = parseFloat(parts[7]);
+            if (!Number.isNaN(xgH)) hGf = hGf * 0.75 + xgH * 0.25;
+            if (!Number.isNaN(xgA)) aGf = aGf * 0.75 + xgA * 0.25;
+          }
+
+          const lambdaHome = (hGf / avgHome) * (aGa / avgHome) * avgHome;
+          const lambdaAway = (aGf / avgAway) * (hGa / avgAway) * avgAway;
+          const { tips, myPick } = evaluateMatchMarkets(lambdaHome, lambdaAway);
+
+          out.push({
+            id: `m_${idx}`,
+            date: new Date().toISOString(),
+            homeTeam,
+            awayTeam,
+            rawSummary: `D: ${hGf.toFixed(2)}/${hGa.toFixed(2)} | G: ${aGf.toFixed(2)}/${aGa.toFixed(2)}`,
+            tips,
+            myPick
+          });
+        } else {
+          const pair = line.split(/\s+-\s+|\s+vs\.?\s+/i);
+          if (pair.length >= 2) {
+            const { tips, myPick } = evaluateMatchMarkets(avgHome, avgAway);
+            out.push({
+              id: `m_${idx}`,
+              date: new Date().toISOString(),
+              homeTeam: pair[0].trim(),
+              awayTeam: pair[1].trim(),
+              rawSummary: `D: ${avgHome.toFixed(2)}/${avgAway.toFixed(2)} | G: ${avgAway.toFixed(2)}/${avgHome.toFixed(2)}`,
+              tips,
+              myPick
+            });
+          }
+        }
+      });
+      return out;
+    }
+
+    /**
+     * Renderovanje interfejsa, kartica utakmica i tiketa kola na dnu
+     */
+    function renderLeagueSelect(filterStr = '') {
+      const sel = document.getElementById('leagueSelect');
+      const q = filterStr.trim().toLowerCase();
+      sel.innerHTML = '';
+
+      const groups = ["UEFA takmičenja", "Lige petice", "Nacionalne lige"];
+      let count = 0;
+
+      groups.forEach(groupName => {
+        const matches = LEAGUES.filter(l =>
+          l.category === groupName &&
+          (l.name.toLowerCase().includes(q) ||
+           l.country.toLowerCase().includes(q) ||
+           l.category.toLowerCase().includes(q))
+        );
+
+        if (matches.length > 0) {
+          const optgroup = document.createElement('optgroup');
+          optgroup.label = groupName;
+          optgroup.className = 'bg-pitch-900 text-slate-300 font-bold';
+
+          matches.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = item.name;
+            opt.className = 'bg-pitch-950 text-white font-medium';
+            if (item.id === state.selectedLeagueId) {
+              opt.selected = true;
+            }
+            optgroup.appendChild(opt);
+            count++;
+          });
+
+          sel.appendChild(optgroup);
+        }
+      });
+
+      if (count === 0) {
+        const opt = document.createElement('option');
+        opt.textContent = 'Nema rezultata pretrage';
+        opt.disabled = true;
+        sel.appendChild(opt);
+      }
+
+      highlightQuickButtons();
+    }
+
+    function highlightQuickButtons() {
+      document.querySelectorAll('.quick-btn').forEach(btn => {
+        if (btn.dataset.league === state.selectedLeagueId) {
+          btn.className = 'quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 text-pitch-950 border border-emerald-400 shrink-0 transition';
+        } else {
+          btn.className = 'quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition';
+        }
+      });
+    }
+
+    function formatKickoff(isoStr) {
+      const d = new Date(isoStr);
+      if (Number.isNaN(d.getTime())) return '';
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${day}.${month}. • ${hh}:${mm}`;
+    }
+
+    function escapeText(value) {
+      const div = document.createElement('div');
+      div.textContent = String(value ?? '');
+      return div.innerHTML;
+    }
+
+    function renderMatchesAndTicket(predictions) {
+      const listEl = document.getElementById('matchesList');
+      const ticketSec = document.getElementById('roundTicketSection');
+      const ticketItemsEl = document.getElementById('roundTicketItems');
+
+      if (!Array.isArray(predictions) || predictions.length === 0) {
+        listEl.innerHTML = '';
+        ticketSec.classList.add('hidden');
+        state.ticketPlainText = '';
+        return;
+      }
+
+      listEl.innerHTML = predictions.map(m => {
+        const tipRows = m.tips.map(t => {
+          const isHigh = t.pct >= 75;
+          const rowCls = isHigh
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-pitch-950/90 border-white/10';
+          const badgeCls = isHigh
+            ? 'bg-emerald-500 text-pitch-950 font-extrabold'
+            : 'bg-slate-800 text-slate-200 font-bold';
+          const barCls = isHigh ? 'bg-emerald-400' : 'bg-sky-400';
+
+          return `
+            <div class="rounded-xl px-3 py-2.5 border ${rowCls}">
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="text-xs sm:text-sm font-semibold text-slate-100 truncate">${escapeText(t.label)}</span>
+                <span class="px-2 py-0.5 rounded-md text-xs ${badgeCls} shrink-0">${t.pct.toFixed(1)}%</span>
+              </div>
+              <div class="w-full h-1.5 bg-pitch-900 rounded-full overflow-hidden">
+                <div class="h-full rounded-full ${barCls}" style="width: ${t.pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <article class="glass-card rounded-2xl p-4 space-y-3">
+            <div class="flex items-start justify-between gap-2 border-b border-white/5 pb-2.5">
+              <div class="min-w-0">
+                <div class="text-sm font-bold text-white truncate">
+                  ${escapeText(m.homeTeam)} <span class="text-slate-500 font-normal">-</span> ${escapeText(m.awayTeam)}
+                </div>
+                <div class="text-[11px] font-mono text-slate-400 mt-0.5">${escapeText(m.rawSummary)}</div>
+              </div>
+              <span class="text-[11px] font-medium text-slate-400 bg-pitch-950 px-2.5 py-1 rounded-lg border border-white/5 shrink-0">
+                ${formatKickoff(m.date)}
+              </span>
+            </div>
+
+            <div class="space-y-2">
+              ${tipRows}
+            </div>
+
+            <div class="my-pick-box rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+              <span class="text-xs sm:text-sm font-extrabold text-amber-300 tracking-wide truncate">
+                MOJ PREDLOG: <span class="text-white">${escapeText(m.myPick.label)}</span> • <span class="text-amber-300">${m.myPick.pct.toFixed(1)}%</span>
+              </span>
+              <span class="px-2.5 py-0.5 rounded-md bg-amber-400 text-pitch-950 text-xs font-extrabold shrink-0">
+                ${m.myPick.pct.toFixed(1)}%
+              </span>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Tiket kola na dnu izabrane lige
+      const leagueObj = getLeagueInfo(state.selectedLeagueId);
+      document.getElementById('ticketHeading').textContent = `Tiket kola — ${leagueObj.name}`;
+
+      ticketItemsEl.innerHTML = predictions.map((m, idx) => `
+        <div class="py-2.5 flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-xs sm:text-sm font-semibold text-white truncate">
+              ${idx + 1}. ${escapeText(m.homeTeam)} - ${escapeText(m.awayTeam)}
+            </div>
+            <div class="text-xs font-extrabold text-emerald-400 mt-0.5">
+              ${escapeText(m.myPick.label)}
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-extrabold shrink-0">
+            ${m.myPick.pct.toFixed(1)}%
+          </span>
+        </div>
+      `).join('');
+
+      state.ticketPlainText = [
+        `TIKET KOLA — ${leagueObj.name}`,
+        ...predictions.map((m, idx) =>
+          `${idx + 1}. ${m.homeTeam} - ${m.awayTeam} | ${m.myPick.label} (${m.myPick.pct.toFixed(1)}%)`
+        )
+      ].join('\n');
+
+      ticketSec.classList.remove('hidden');
+    }
+
+    function setLoading(show, title = '', detail = '') {
+      const box = document.getElementById('loadingBox');
+      const list = document.getElementById('matchesList');
+      const ticket = document.getElementById('roundTicketSection');
+
+      if (title) document.getElementById('loadingTitle').textContent = title;
+      if (detail) document.getElementById('loadingDetail').textContent = detail;
+
+      if (show) {
+        box.classList.remove('hidden');
+        list.classList.add('opacity-40', 'pointer-events-none');
+        ticket.classList.add('hidden');
+      } else {
+        box.classList.add('hidden');
+        list.classList.remove('opacity-40', 'pointer-events-none');
+      }
+    }
+
+    function showToast(msg, isError = false) {
+      const box = document.getElementById('toastBox');
+      const txt = document.getElementById('toastText');
+      txt.textContent = msg;
+      box.className = isError
+        ? 'rounded-xl px-4 py-3 text-xs font-semibold border flex items-center justify-between gap-2 bg-rose-500/15 border-rose-500/30 text-rose-200'
+        : 'rounded-xl px-4 py-3 text-xs font-semibold border flex items-center justify-between gap-2 bg-emerald-500/15 border-emerald-500/30 text-emerald-200';
+      box.classList.remove('hidden');
+    }
+
+    function hideToast() {
+      document.getElementById('toastBox').classList.add('hidden');
+    }
+
+    function openManualDrawer(leagueObj) {
+      const drawer = document.getElementById('manualDrawer');
+      const ta = document.getElementById('manualTextarea');
+      document.getElementById('manualSubtitle').textContent =
+        `Unesite utakmice za ${leagueObj.name} (Domaćin - Gost ili CSV format) i kliknite "Izračunaj kolo".`;
+      if (!ta.value.trim()) {
+        ta.value = SAMPLE_TEMPLATES[leagueObj.id] || SAMPLE_TEMPLATES["srb.1"];
+      }
+      drawer.classList.remove('hidden');
+    }
+
+    async function loadSelectedLeague(forceRefresh = false) {
+      const leagueObj = getLeagueInfo(state.selectedLeagueId);
+      highlightQuickButtons();
+      hideToast();
+      document.getElementById('cachedBadge').classList.add('hidden');
+      document.getElementById('leagueAvgBadge').classList.add('hidden');
+      document.getElementById('manualDrawer').classList.add('hidden');
+
+      setLoading(true, `Učitavanje: ${leagueObj.name}`, 'Preuzimanje utakmica tekućeg kola...');
+
+      try {
+        const res = await loadLeagueRound(leagueObj.id, forceRefresh);
+
+        if (res.unsupported) {
+          setLoading(false);
+          document.getElementById('roundBadge').textContent = 'Ručni unos / CSV';
+          document.getElementById('countBadge').textContent = '0 utakmica';
+          renderMatchesAndTicket([]);
+          openManualDrawer(leagueObj);
+          return;
+        }
+
+        if (res.fromCache) {
+          document.getElementById('cachedBadge').classList.remove('hidden');
+        }
+
+        document.getElementById('roundBadge').textContent = res.roundLabel;
+
+        const { predictions, leagueTotalAvg } = buildRoundPredictions(
+          res.roundFixtures,
+          res.schedulesMap
+        );
+
+        state.predictions = predictions;
+        document.getElementById('countBadge').textContent = `${predictions.length} utakmica`;
+
+        const avgBadge = document.getElementById('leagueAvgBadge');
+        avgBadge.textContent = `Prosek: ${leagueTotalAvg}`;
+        avgBadge.classList.remove('hidden');
+
+        renderMatchesAndTicket(predictions);
+      } catch (err) {
+        setLoading(false);
+        showToast(err.message || 'Greška pri učitavanju kola.', true);
+        openManualDrawer(leagueObj);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function copyTicketToClipboard() {
+      if (!state.ticketPlainText) return;
+      const tempArea = document.createElement('textarea');
+      tempArea.value = state.ticketPlainText;
+      tempArea.setAttribute('readonly', '');
+      tempArea.style.position = 'fixed';
+      tempArea.style.opacity = '0';
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      let copied = false;
+      try {
+        copied = document.execCommand('copy');
+      } catch (e) {
+        copied = false;
+      }
+      document.body.removeChild(tempArea);
+
+      if (copied) {
+        showToast('Tiket kola je kopiran.');
+      } else {
+        showToast('Kopiranje nije uspelo.', true);
+      }
+    }
+
+    function bindEvents() {
+      renderLeagueSelect();
+
+      document.getElementById('closeToastBtn').addEventListener('click', hideToast);
+
+      document.getElementById('leagueSearchInput').addEventListener('input', (e) => {
+        renderLeagueSelect(e.target.value);
+        const sel = document.getElementById('leagueSelect');
+        if (sel.options.length > 0 && !sel.options[0].disabled) {
+          const id = sel.value;
+          if (id && id !== state.selectedLeagueId) {
+            state.selectedLeagueId = id;
+            localStorage.setItem(STORAGE_SELECTED_KEY, id);
+            loadSelectedLeague(false);
+          }
+        }
+      });
+
+      document.getElementById('leagueSelect').addEventListener('change', (e) => {
+        state.selectedLeagueId = e.target.value;
+        localStorage.setItem(STORAGE_SELECTED_KEY, state.selectedLeagueId);
+        loadSelectedLeague(false);
+      });
+
+      document.querySelectorAll('.quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.dataset.league;
+          state.selectedLeagueId = targetId;
+          localStorage.setItem(STORAGE_SELECTED_KEY, targetId);
+          document.getElementById('leagueSearchInput').value = '';
+          renderLeagueSelect();
+          loadSelectedLeague(false);
+        });
+      });
+
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        loadSelectedLeague(true);
+      });
+
+      document.getElementById('toggleManualBtn').addEventListener('click', () => {
+        const drawer = document.getElementById('manualDrawer');
+        if (drawer.classList.contains('hidden')) {
+          openManualDrawer(getLeagueInfo(state.selectedLeagueId));
+        } else {
+          drawer.classList.add('hidden');
+        }
+      });
+
+      document.getElementById('closeManualBtn').addEventListener('click', () => {
+        document.getElementById('manualDrawer').classList.add('hidden');
+      });
+
+      document.getElementById('presetBtn').addEventListener('click', () => {
+        const info = getLeagueInfo(state.selectedLeagueId);
+        document.getElementById('manualTextarea').value =
+          SAMPLE_TEMPLATES[info.id] || SAMPLE_TEMPLATES["srb.1"];
+      });
+
+      document.getElementById('runManualCalcBtn').addEventListener('click', () => {
+        const raw = document.getElementById('manualTextarea').value;
+        const avgH = parseFloat(document.getElementById('manualAvgHome').value) || 1.52;
+        const avgA = parseFloat(document.getElementById('manualAvgAway').value) || 1.18;
+
+        const parsed = parseManualLines(raw, avgH, avgA);
+        if (parsed.length === 0) {
+          showToast('Unesite bar jedan par u formatu "Domaćin - Gost".', true);
+          return;
+        }
+
+        state.predictions = parsed;
+        document.getElementById('roundBadge').textContent = 'Ručni unos / CSV';
+        document.getElementById('countBadge').textContent = `${parsed.length} utakmica`;
+        document.getElementById('cachedBadge').classList.add('hidden');
+
+        const avgBadge = document.getElementById('leagueAvgBadge');
+        avgBadge.textContent = `Prosek: ${(avgH + avgA).toFixed(2)}`;
+        avgBadge.classList.remove('hidden');
+
+        renderMatchesAndTicket(parsed);
+        showToast(`Izračunato ${parsed.length} utakmica.`);
+      });
+
+      document.getElementById('copyTicketBtn').addEventListener('click', copyTicketToClipboard);
+
+      loadSelectedLeague(false);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bindEvents);
+    } else {
+      bindEvents();
+    }
+  </script>
+</body>
+</html>
