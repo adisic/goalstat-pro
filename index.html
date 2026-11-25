@@ -71,7 +71,7 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
 
-  <!-- Zaglavlje -->
+  <!-- Zaglavlje aplikacije -->
   <header class="sticky top-0 z-30 bg-pitch-950/90 backdrop-blur-md border-b border-white/10">
     <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5 min-w-0">
@@ -118,9 +118,9 @@
         </div>
       </div>
 
-      <!-- Pretraga lige ili države -->
+      <!-- Pretraga lige, države ili takmičenja -->
       <div class="relative">
-        <input id="leagueSearchInput" type="text" placeholder="Pretraži ligu ili državu (npr. Engleska, Srbija, Liga šampiona, Peru)..."
+        <input id="leagueSearchInput" type="text" placeholder="Pretraži ligu, državu ili takmičenje (npr. Engleska, Srbija, Liga šampiona, Peru)..."
           class="w-full bg-pitch-950/90 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition" />
         <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8"></circle>
@@ -128,14 +128,14 @@
         </svg>
       </div>
 
-      <!-- Padajući meni grupisan po kategorijama -->
+      <!-- Padajući meni sa 30 takmičenja grupisanih u 3 kategorije -->
       <div>
         <select id="leagueSelect"
           class="w-full bg-pitch-950 border border-white/15 rounded-xl px-3.5 py-3 text-sm font-semibold text-white focus:outline-none focus:border-emerald-400 transition">
         </select>
       </div>
 
-      <!-- Brzi dugmići -->
+      <!-- Brzi dugmići za najpopularnija takmičenja -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5" id="quickLeaguesBar">
         <button type="button" data-league="uefa.champions" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Liga šampiona</button>
         <button type="button" data-league="uefa.europa" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Liga Evrope</button>
@@ -145,7 +145,7 @@
         <button type="button" data-league="ger.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Bundesliga</button>
         <button type="button" data-league="ita.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Serie A</button>
         <button type="button" data-league="fra.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">Ligue 1</button>
-        <button type="button" data-league="srb.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">SuperLiga</button>
+        <button type="button" data-league="srb.1" class="quick-btn px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-pitch-950 border border-white/10 text-slate-300 hover:border-emerald-400/50 hover:text-white shrink-0 transition">SuperLiga Srbije</button>
       </div>
 
       <!-- Informacije o kolu i dugmad -->
@@ -229,14 +229,14 @@
       </div>
     </section>
 
-    <!-- Stanje učitavanja -->
+    <!-- Indikator učitavanja -->
     <div id="loadingBox" class="hidden py-12 flex flex-col items-center justify-center text-center space-y-3">
       <div class="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-400 rounded-full animate-spin"></div>
       <p id="loadingTitle" class="text-sm font-semibold text-slate-200">Učitavanje tekućeg kola...</p>
-      <p id="loadingDetail" class="text-xs text-slate-400">Prikupljanje rasporeda i klupskih utakmica...</p>
+      <p id="loadingDetail" class="text-xs text-slate-400">Preuzimanje rasporeda po danima i klupskih utakmica...</p>
     </div>
 
-    <!-- Sve utakmice kola -->
+    <!-- Lista svih utakmica kola -->
     <section id="matchesList" class="space-y-3"></section>
 
     <!-- Tiket kola na dnu izabrane lige -->
@@ -257,44 +257,47 @@
 
   <script>
     /**
-     * Sva tražena takmičenja grupisana u 3 kategorije
+     * 1. Definicija svih 30 takmičenja u 3 grupe:
+     * - UEFA (3)
+     * - Lige petice 1. i 2. rang (10)
+     * - 17 elitnih nacionalnih liga (17)
      */
     const LEAGUES = [
-      // UEFA klupska takmičenja
-      { id: "uefa.champions", category: "UEFA takmičenja", name: "Liga šampiona", country: "Evropa" },
-      { id: "uefa.europa", category: "UEFA takmičenja", name: "Liga Evrope", country: "Evropa" },
-      { id: "uefa.europa.conf", category: "UEFA takmičenja", name: "Liga konferencija", country: "Evropa" },
+      // UEFA takmičenja
+      { id: "uefa.champions", category: "UEFA takmičenja", name: "UEFA Champions League", country: "Evropa" },
+      { id: "uefa.europa", category: "UEFA takmičenja", name: "UEFA Europa League", country: "Evropa" },
+      { id: "uefa.europa.conf", category: "UEFA takmičenja", name: "UEFA Conference League", country: "Evropa" },
 
       // Lige petice (1. i 2. rang)
-      { id: "eng.1", category: "Lige petice", name: "Engleska Premijer liga", country: "Engleska" },
-      { id: "eng.2", category: "Lige petice", name: "Engleska Championship", country: "Engleska" },
-      { id: "esp.1", category: "Lige petice", name: "Španija La Liga", country: "Španija" },
-      { id: "esp.2", category: "Lige petice", name: "Španija La Liga 2", country: "Španija" },
-      { id: "ger.1", category: "Lige petice", name: "Nemačka Bundesliga", country: "Nemačka" },
-      { id: "ger.2", category: "Lige petice", name: "Nemačka 2. Bundesliga", country: "Nemačka" },
-      { id: "ita.1", category: "Lige petice", name: "Italija Serie A", country: "Italija" },
-      { id: "ita.2", category: "Lige petice", name: "Italija Serie B", country: "Italija" },
-      { id: "fra.1", category: "Lige petice", name: "Francuska Ligue 1", country: "Francuska" },
-      { id: "fra.2", category: "Lige petice", name: "Francuska Ligue 2", country: "Francuska" },
+      { id: "eng.1", category: "Lige petice", name: "Premier League (ENG)", country: "Engleska" },
+      { id: "eng.2", category: "Lige petice", name: "Championship (ENG)", country: "Engleska" },
+      { id: "ger.1", category: "Lige petice", name: "Bundesliga (GER)", country: "Nemačka" },
+      { id: "ger.2", category: "Lige petice", name: "2. Bundesliga (GER)", country: "Nemačka" },
+      { id: "esp.1", category: "Lige petice", name: "La Liga (ESP)", country: "Španija" },
+      { id: "esp.2", category: "Lige petice", name: "LaLiga2 (ESP)", country: "Španija" },
+      { id: "ita.1", category: "Lige petice", name: "Serie A (ITA)", country: "Italija" },
+      { id: "ita.2", category: "Lige petice", name: "Serie B (ITA)", country: "Italija" },
+      { id: "fra.1", category: "Lige petice", name: "Ligue 1 (FRA)", country: "Francuska" },
+      { id: "fra.2", category: "Lige petice", name: "Ligue 2 (FRA)", country: "Francuska" },
 
       // 17 elitnih nacionalnih liga
-      { id: "aut.1", category: "Nacionalne lige", name: "Austrija Bundesliga", country: "Austrija" },
-      { id: "bel.1", category: "Nacionalne lige", name: "Belgija Pro Liga", country: "Belgija" },
-      { id: "cze.1", category: "Nacionalne lige", name: "Češka 1. Liga", country: "Češka" },
-      { id: "den.1", category: "Nacionalne lige", name: "Danska Superliga", country: "Danska" },
-      { id: "gre.1", category: "Nacionalne lige", name: "Grčka Super League", country: "Grčka" },
-      { id: "hun.1", category: "Nacionalne lige", name: "Mađarska NB I", country: "Mađarska" },
-      { id: "ned.1", category: "Nacionalne lige", name: "Holandija Eredivisie", country: "Holandija" },
-      { id: "nor.1", category: "Nacionalne lige", name: "Norveška Eliteserien", country: "Norveška" },
-      { id: "pol.1", category: "Nacionalne lige", name: "Poljska Ekstraklasa", country: "Poljska" },
-      { id: "por.1", category: "Nacionalne lige", name: "Portugalija Primeira Liga", country: "Portugalija" },
-      { id: "rus.1", category: "Nacionalne lige", name: "Rusija Premier Liga", country: "Rusija" },
-      { id: "srb.1", category: "Nacionalne lige", name: "Srbija SuperLiga", country: "Srbija" },
-      { id: "sco.1", category: "Nacionalne lige", name: "Škotska Premiership", country: "Škotska" },
-      { id: "swe.1", category: "Nacionalne lige", name: "Švedska Allsvenskan", country: "Švedska" },
-      { id: "sui.1", category: "Nacionalne lige", name: "Švajcarska Super League", country: "Švajcarska" },
-      { id: "tur.1", category: "Nacionalne lige", name: "Turska Süper Lig", country: "Turska" },
-      { id: "per.1", category: "Nacionalne lige", name: "Peru Liga 1", country: "Peru" }
+      { id: "srb.1", category: "Nacionalne lige", name: "Super Liga Srbije (SRB)", country: "Srbija" },
+      { id: "aut.1", category: "Nacionalne lige", name: "Admiral Bundesliga (AUT)", country: "Austrija" },
+      { id: "tur.1", category: "Nacionalne lige", name: "Trendyol Super Lig (TUR)", country: "Turska" },
+      { id: "per.1", category: "Nacionalne lige", name: "Liga 1 Peru (PER)", country: "Peru" },
+      { id: "por.1", category: "Nacionalne lige", name: "Primeira Liga (POR)", country: "Portugalija" },
+      { id: "ned.1", category: "Nacionalne lige", name: "Eredivisie (NED)", country: "Holandija" },
+      { id: "bel.1", category: "Nacionalne lige", name: "Jupiler Pro League (BEL)", country: "Belgija" },
+      { id: "sco.1", category: "Nacionalne lige", name: "Scottish Premiership (SCO)", country: "Škotska" },
+      { id: "den.1", category: "Nacionalne lige", name: "Superligaen (DEN)", country: "Danska" },
+      { id: "nor.1", category: "Nacionalne lige", name: "Eliteserien (NOR)", country: "Norveška" },
+      { id: "swe.1", category: "Nacionalne lige", name: "Allsvenskan (SWE)", country: "Švedska" },
+      { id: "pol.1", category: "Nacionalne lige", name: "Ekstraklasa (POL)", country: "Poljska" },
+      { id: "cze.1", category: "Nacionalne lige", name: "Czech First League (CZE)", country: "Češka" },
+      { id: "cro.1", category: "Nacionalne lige", name: "HNL (CRO)", country: "Hrvatska" },
+      { id: "gre.1", category: "Nacionalne lige", name: "Super League Greece (GRE)", country: "Grčka" },
+      { id: "sui.1", category: "Nacionalne lige", name: "Swiss Super League (SUI)", country: "Švajcarska" },
+      { id: "arg.1", category: "Nacionalne lige", name: "Liga Profesional / Primera Division (ARG)", country: "Argentina" }
     ];
 
     const SAMPLE_TEMPLATES = {
@@ -302,17 +305,17 @@
         "Crvena zvezda, Partizan, 2.65, 0.45, 1.85, 1.15, 2.50, 1.60\n" +
         "TSC Bačka Topola, Vojvodina, 1.65, 1.10, 1.40, 1.25, 1.55, 1.30\n" +
         "Čukarički, Radnički 1923, 1.50, 1.05, 1.35, 1.35, 1.45, 1.25",
-      "cze.1":
-        "Slavia Praha, Viktoria Plzeň, 2.35, 0.55, 1.65, 1.05, 2.20, 1.50\n" +
-        "Sparta Praha, Baník Ostrava, 2.20, 0.80, 1.35, 1.25, 2.05, 1.20"
+      "cro.1":
+        "Dinamo Zagreb, Hajduk Split, 2.30, 0.65, 1.55, 1.05, 2.15, 1.35\n" +
+        "Rijeka, Osijek, 1.80, 0.90, 1.25, 1.20, 1.70, 1.15"
     };
 
     /**
-     * Keširanje (12 sati) i stanje aplikacije
+     * 2. Keširanje (12 sati) i upravljanje stanjem
      */
     const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
-    const STORAGE_SELECTED_KEY = 'goalstat_pro_selected_league_v6';
-    const STORAGE_CACHE_PREFIX = 'goalstat_pro_cache_v6_';
+    const STORAGE_SELECTED_KEY = 'goalstat_pro_selected_league_v8';
+    const STORAGE_CACHE_PREFIX = 'goalstat_pro_cache_v8_';
 
     const savedLeague = localStorage.getItem(STORAGE_SELECTED_KEY);
     const initialLeagueId = LEAGUES.some(l => l.id === savedLeague) ? savedLeague : LEAGUES[0].id;
@@ -359,13 +362,25 @@
     }
 
     /**
-     * Formatiranje datuma i povlačenje celog tekućeg kola (petak-ponedeljak / prozor kola)
+     * 3. Povlačenje celog kola pojedinačnim upitima po danima (dates=YYYYMMDD)
+     * Obuhvata 1 dan unazad do 7 dana unapred (petak, subota, nedelja, ponedeljak...)
      */
     function toYmd(dateObj) {
       const y = dateObj.getFullYear();
       const m = String(dateObj.getMonth() + 1).padStart(2, '0');
       const d = String(dateObj.getDate()).padStart(2, '0');
       return `${y}${m}${d}`;
+    }
+
+    function buildSingleDayDates(daysBack = 1, daysAhead = 7) {
+      const now = new Date();
+      const baseMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dates = [];
+      for (let offset = -daysBack; offset <= daysAhead; offset++) {
+        const d = new Date(baseMidnight.getTime() + offset * 86400000);
+        dates.push(toYmd(d));
+      }
+      return dates;
     }
 
     function parseEventsToFixtures(events) {
@@ -440,7 +455,7 @@
             }
           }
         } catch (err) {
-          // Nastavi na sledeći pokušaj
+          // Nastavi na sledeći endpoint
         }
       }
 
@@ -491,9 +506,6 @@
       return completed;
     }
 
-    /**
-     * Povlači celo kolo kroz višednevni prozor (-3 dana do +6 dana), deduplikuje po ID-ju i sortira hronološki
-     */
     async function loadLeagueRound(slug, forceRefresh = false) {
       if (!forceRefresh) {
         const cached = readCache(slug);
@@ -502,50 +514,65 @@
         }
       }
 
-      const now = new Date();
-      const startDate = new Date(now.getTime() - 3 * 86400000);
-      const endDate = new Date(now.getTime() + 6 * 86400000);
-      const windowParam = `${toYmd(startDate)}-${toYmd(endDate)}`;
+      const dayList = buildSingleDayDates(1, 7);
+      let anySuccess = false;
+      let defaultRoundLabel = '';
 
-      const [resDefault, resWindow] = await Promise.all([
-        fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard`).catch(() => null),
-        fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${windowParam}`).catch(() => null)
-      ]);
+      const dayResponses = await Promise.all(
+        dayList.map(async (ymd) => {
+          try {
+            const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard?dates=${ymd}`;
+            const resp = await fetch(url);
+            if (!resp.ok) return [];
+            const json = await resp.json();
+            anySuccess = true;
+            if (!defaultRoundLabel && json?.leagues?.[0]?.season?.type?.name) {
+              defaultRoundLabel = json.leagues[0].season.type.name;
+            }
+            return parseEventsToFixtures(json?.events || []);
+          } catch (err) {
+            return [];
+          }
+        })
+      );
 
-      const jsonDefault = resDefault && resDefault.ok ? await resDefault.json() : null;
-      const jsonWindow = resWindow && resWindow.ok ? await resWindow.json() : null;
+      // Dodatni podrazumevani poziv za tekući dan/kolo ako pojedinačni dani nisu vratili dovoljno mečeva
+      let fallbackEvents = [];
+      try {
+        const defResp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${slug}/scoreboard`);
+        if (defResp.ok) {
+          const defJson = await defResp.json();
+          anySuccess = true;
+          if (!defaultRoundLabel && defJson?.leagues?.[0]?.season?.type?.name) {
+            defaultRoundLabel = defJson.leagues[0].season.type.name;
+          }
+          fallbackEvents = parseEventsToFixtures(defJson?.events || []);
+        }
+      } catch (err) {
+        // Ignoriši ako ne uspe
+      }
 
-      if (!jsonDefault && !jsonWindow) {
+      if (!anySuccess) {
         return { unsupported: true };
       }
 
-      const combinedRaw = [
-        ...parseEventsToFixtures(jsonDefault?.events || []),
-        ...parseEventsToFixtures(jsonWindow?.events || [])
-      ];
+      const mergedRaw = [...dayResponses.flat(), ...fallbackEvents];
 
-      // Deduplikacija po ID-ju
+      // Deduplikacija po ID-ju događaja
       const uniqueMap = new Map();
-      combinedRaw.forEach(item => {
+      mergedRaw.forEach(item => {
         if (!uniqueMap.has(item.id)) {
           uniqueMap.set(item.id, item);
         }
       });
 
-      let allFixtures = Array.from(uniqueMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+      let roundFixtures = Array.from(uniqueMap.values()).sort((a, b) => a.timestamp - b.timestamp);
 
-      // Preferiraj neigrane / predstojeće i tekuće utakmice kola u okviru prozora
-      const windowStartTs = startDate.getTime();
-      const windowEndTs = endDate.getTime();
-      const inWindow = allFixtures.filter(f => f.timestamp >= windowStartTs && f.timestamp <= windowEndTs);
-
-      let roundFixtures = inWindow.length > 0 ? inWindow : allFixtures;
-
-      // Ako ima više od 14 mečeva u zbiru (npr. više kola zaredom), izdvoj jedno kompletno kolo
+      // Ako ima više od 14 mečeva (npr. više kola u 8 dana), zadrži jedno kolo oko prvog predstojećeg meča
       if (roundFixtures.length > 14) {
-        const upcomingAnchor = roundFixtures.find(f => !f.completed) || roundFixtures[0];
-        const anchorTs = upcomingAnchor.timestamp;
-        const clustered = roundFixtures.filter(f => Math.abs(f.timestamp - anchorTs) <= 4.5 * 86400000);
+        const nowTs = Date.now() - 24 * 3600 * 1000;
+        const anchor = roundFixtures.find(f => !f.completed && f.timestamp >= nowTs) || roundFixtures[0];
+        const clustered = roundFixtures.filter(f => Math.abs(f.timestamp - anchor.timestamp) <= 4.5 * 86400000);
         if (clustered.length >= 4) {
           roundFixtures = clustered;
         }
@@ -565,7 +592,7 @@
 
       const clubIds = Array.from(clubIdsSet);
       document.getElementById('loadingDetail').textContent =
-        `Preuzimanje klupske statistike za ${clubIds.length} klubova...`;
+        `Preuzimanje klupske statistike sezone 2026/27 za ${clubIds.length} klubova...`;
 
       const schedulesArr = await Promise.all(
         clubIds.map(id => fetchClubSchedule2026(slug, id))
@@ -578,7 +605,7 @@
 
       const roundLabel =
         roundFixtures.find(f => f.roundName)?.roundName ||
-        jsonDefault?.leagues?.[0]?.season?.type?.name ||
+        defaultRoundLabel ||
         'Tekuće kolo';
 
       const payload = {
@@ -592,7 +619,7 @@
     }
 
     /**
-     * Poissonov statistički model (bez uticaja kladioničarskih kvota)
+     * 4. Poissonov statistički model (matrica 0-10 golova i 1. poluvreme, bez kvota)
      */
     function poissonProbs(lambda, maxGoals = 10) {
       const lam = Math.max(0.15, Math.min(5.5, lambda));
@@ -648,7 +675,7 @@
       const ggYes = pGG;
       const ggNo = 1 - pGG;
 
-      // Top 3 gol/GG tržišta (bez trivijalnog 0.5+ ukupno da bi GG/NG i golovi prirodno dolazili do izražaja)
+      // Top 3 tipa sortirana isključivo po opadajućem procentu (uključuje GG/NG, golove meča i golove timova)
       const topMarketPool = [
         { label: "GG (Oba tima daju gol)", prob: ggYes },
         { label: "NG (Oba tima ne daju gol)", prob: ggNo },
@@ -671,7 +698,7 @@
         .sort((a, b) => b.pct - a.pct)
         .slice(0, 3);
 
-      // Prošireni model za MOJ PREDLOG (1, X, 2, 1X, X2, 12, GG/NG, golovi na meču, golovi timova i 1. poluvreme ~44%)
+      // Prošireni model za MOJ PREDLOG (1, X, 2, 1X, X2, 12, GG/NG, golovi na meču, golovi timova i 1. poluvreme)
       const p1X = pHomeWin + pDraw;
       const pX2 = pAwayWin + pDraw;
       const p12 = pHomeWin + pAwayWin;
@@ -765,16 +792,14 @@
         return {
           gf: avgGf * 0.75 + (xgForSum / xgCount) * 0.25,
           ga: avgGa * 0.75 + (xgAgainstSum / xgCount) * 0.25,
-          rawGf: avgGf,
-          rawGa: avgGa
+          count: n
         };
       }
 
       return {
         gf: avgGf,
         ga: avgGa,
-        rawGf: avgGf,
-        rawGa: avgGa
+        count: n
       };
     }
 
@@ -869,7 +894,7 @@
           date: fix.date,
           homeTeam: fix.home.name,
           awayTeam: fix.away.name,
-          rawSummary: `D: ${wHomeGf.toFixed(2)}/${wHomeGa.toFixed(2)} | G: ${wAwayGf.toFixed(2)}/${wAwayGa.toFixed(2)}`,
+          rawSummary: `D(${hMatches.length}): ${wHomeGf.toFixed(2)}/${wHomeGa.toFixed(2)} | G(${aMatches.length}): ${wAwayGf.toFixed(2)}/${wAwayGa.toFixed(2)}`,
           tips,
           myPick
         };
@@ -943,7 +968,7 @@
     }
 
     /**
-     * Renderovanje interfejsa, kartica utakmica i tiketa kola na dnu
+     * Renderovanje UI, kartica mečeva i tiketa kola
      */
     function renderLeagueSelect(filterStr = '') {
       const sel = document.getElementById('leagueSelect');
@@ -1084,7 +1109,6 @@
         `;
       }).join('');
 
-      // Tiket kola na dnu izabrane lige
       const leagueObj = getLeagueInfo(state.selectedLeagueId);
       document.getElementById('ticketHeading').textContent = `Tiket kola — ${leagueObj.name}`;
 
@@ -1165,7 +1189,7 @@
       document.getElementById('leagueAvgBadge').classList.add('hidden');
       document.getElementById('manualDrawer').classList.add('hidden');
 
-      setLoading(true, `Učitavanje: ${leagueObj.name}`, 'Preuzimanje utakmica tekućeg kola...');
+      setLoading(true, `Učitavanje: ${leagueObj.name}`, 'Preuzimanje utakmica po danima (petak–ponedeljak)...');
 
       try {
         const res = await loadLeagueRound(leagueObj.id, forceRefresh);
